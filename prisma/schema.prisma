@@ -1,0 +1,250 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum EducationLevel {
+  BACHELORS
+  UNIVERSITY
+  MASTERS
+  DOCTORATE
+}
+
+enum Gender {
+  MALE
+  FEMALE
+}
+
+enum AttendanceType {
+  ATTEND
+  ABSENT
+  DELAY
+}
+
+model Organization {
+  id        Int      @id @default(autoincrement())
+  name      String
+  email     String   @unique
+  password  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  managers  Manager[]
+  teachers  Teacher[]
+  students  Student[]
+  classRooms ClassRoom[]
+  courses   Course[]
+  buses     Bus[]
+}
+
+model Manager {
+  id                Int             @id @default(autoincrement())
+  firstName         String
+  lastName          String
+  email             String          @unique
+  password          String
+  phone             String?
+  imageUrl          String?
+  notes             String?
+  bod               DateTime?
+  educationLevel    EducationLevel?
+  universityDegree  String?
+  yearsOfExperience Int?
+  isActive          Boolean         @default(true)
+  gender            Gender
+  organizationId    Int
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  // Relations
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+}
+
+model Teacher {
+  id                    Int             @id @default(autoincrement())
+  firstName             String
+  lastName              String
+  email                 String          @unique
+  password              String
+  salaryPerSession      Float
+  phone                 String?
+  imageUrl              String?
+  notes                 String?
+  bod                   DateTime?
+  educationLevel        EducationLevel?
+  universityDegree      String?
+  yearsOfExperience     Int?
+  isActive              Boolean         @default(true)
+  gender                Gender
+  sessionsCountInMonth  Int             @default(0)
+  organizationId        Int
+  subjectId             Int
+  createdAt             DateTime        @default(now())
+  updatedAt             DateTime        @updatedAt
+
+  // Relations
+  organization  Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  subject       Subject         @relation(fields: [subjectId], references: [id])
+  courses       Course[]
+  sessionPayments SessionPayment[]
+}
+
+model Subject {
+  id       Int       @id @default(autoincrement())
+  name     String    @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  teachers Teacher[]
+}
+
+model Student {
+  id             Int      @id @default(autoincrement())
+  firstName      String
+  lastName       String
+  bod            DateTime?
+  notes          String?
+  lng            Float?
+  lat            Float?
+  imageUrl       String?
+  gender         Gender
+  organizationId Int
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  // Relations
+  organization     Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  courses          CourseStudent[]
+  buses            BusStudent[]
+  studentAttendance StudentAttendance[]
+}
+
+model ClassRoom {
+  id            Int      @id @default(autoincrement())
+  title         String
+  hasProjector  Boolean  @default(false)
+  organizationId Int
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  courses      Course[]
+}
+
+model Course {
+  id            Int      @id @default(autoincrement())
+  title         String
+  startDate     DateTime
+  endDate       DateTime
+  days          String[] // Array of strings like ["Monday", "Wednesday", "Friday"]
+  startTime     String   // Time as string like "09:00"
+  endTime       String   // Time as string like "11:00"
+  organizationId Int
+  teacherId     Int
+  classRoomId   Int
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  organization   Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  teacher        Teacher           @relation(fields: [teacherId], references: [id])
+  classRoom      ClassRoom         @relation(fields: [classRoomId], references: [id])
+  students       CourseStudent[]
+  courseSessions CourseSession[]
+}
+
+model Bus {
+  id            Int      @id @default(autoincrement())
+  driverName    String
+  carNumber     String
+  carModel      String
+  startTime     String   // Time as string like "07:00"
+  startLng      Float?
+  startLat      Float?
+  organizationId Int
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  students    BusStudent[]
+}
+
+model CourseSession {
+  id        Int      @id @default(autoincrement())
+  title     String
+  duration  Int      // Duration in minutes
+  courseId  Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  course           Course            @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  studentAttendance StudentAttendance[]
+  sessionPayments  SessionPayment[]
+}
+
+model StudentAttendance {
+  id              Int            @id @default(autoincrement())
+  attendanceType  AttendanceType
+  studentId       Int
+  sessionId       Int
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  // Relations
+  student Student        @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  session CourseSession  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@unique([studentId, sessionId])
+}
+
+model SessionPayment {
+  id         Int      @id @default(autoincrement())
+  amount     Float
+  teacherId  Int
+  sessionId  Int
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  // Relations
+  teacher Teacher       @relation(fields: [teacherId], references: [id])
+  session CourseSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+}
+
+// Join tables for many-to-many relationships
+model CourseStudent {
+  id        Int @id @default(autoincrement())
+  courseId  Int
+  studentId Int
+
+  course  Course  @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([courseId, studentId])
+}
+
+model BusStudent {
+  id        Int @id @default(autoincrement())
+  busId     Int
+  studentId Int
+
+  bus     Bus     @relation(fields: [busId], references: [id], onDelete: Cascade)
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([busId, studentId])
+}
