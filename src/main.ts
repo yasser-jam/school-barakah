@@ -7,16 +7,20 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   // Enable validation pipes globally
-  app.useGlobalPipes(new ValidationPipe({
-    whitelist: true,
-    forbidNonWhitelisted: true,
-    transform: true,
-  }));
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
+    }),
+  );
 
   // Swagger configuration
   const config = new DocumentBuilder()
     .setTitle('School Management System API')
-    .setDescription('Comprehensive API documentation for the School Management System - A SaaS application for managing schools, teachers, students, courses, attendance, and more.')
+    .setDescription(
+      'Comprehensive API documentation for the School Management System - A SaaS application for managing schools, teachers, students, courses, attendance, and more.',
+    )
     .setVersion('1.0')
     .addTag('Organization Auth', 'Organization authentication endpoints')
     .addTag('Manager Auth', 'Manager authentication endpoints')
@@ -52,7 +56,11 @@ async function bootstrap() {
   });
 
   await app.listen(process.env.PORT ?? 3000);
-  console.log(`🚀 School Management System API is running on: http://localhost:${process.env.PORT ?? 3000}`);
-  console.log(`📚 API Documentation available at: http://localhost:${process.env.PORT ?? 3000}/api`);
+  console.log(
+    `🚀 School Management System API is running on: http://localhost:${process.env.PORT ?? 3000}`,
+  );
+  console.log(
+    `📚 API Documentation available at: http://localhost:${process.env.PORT ?? 3000}/api`,
+  );
 }
 bootstrap();
