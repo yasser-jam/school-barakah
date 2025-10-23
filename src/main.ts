@@ -49,10 +49,18 @@ async function bootstrap() {
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
+
+  // ✅ Use CDN-based Swagger UI to avoid missing assets on Vercel
   SwaggerModule.setup('api', app, document, {
     swaggerOptions: {
       persistAuthorization: true,
     },
+    customJs: [
+      'https://unpkg.com/swagger-ui-dist/swagger-ui-bundle.js',
+      'https://unpkg.com/swagger-ui-dist/swagger-ui-standalone-preset.js',
+    ],
+    customCssUrl: 'https://unpkg.com/swagger-ui-dist/swagger-ui.css',
+    customSiteTitle: 'School Management System API Docs',
   });
 
   await app.listen(process.env.PORT ?? 3000);
