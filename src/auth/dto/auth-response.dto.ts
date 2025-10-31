@@ -25,6 +25,13 @@ export class UserResponseDto {
     example: 'MANAGER',
   })
   userType: string;
+
+  @ApiProperty({
+    description: 'User role to differentiate teacher from manager/organization',
+    enum: ['teacher', 'manager', 'organization'],
+    example: 'teacher',
+  })
+  role: string;
 }
 
 export class AuthResponseDto {

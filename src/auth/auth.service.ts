@@ -46,6 +46,7 @@ export class AuthService {
         email: organization.email,
         name: organization.name,
         userType: 'ORGANIZATION',
+        role: 'organization',
         organizationId: organization.id,
       },
     };
@@ -54,35 +55,67 @@ export class AuthService {
   async loginOrganization(loginDto: LoginDto) {
     const { email, password } = loginDto;
 
-    // Find organization
+    // Try to find organization first
     const organization = await this.prisma.organization.findUnique({
       where: { email },
     });
 
-    if (!organization) {
-      throw new UnauthorizedException('Invalid credentials');
+    if (organization) {
+      // Verify password
+      const isPasswordValid = await bcrypt.compare(password, organization.password);
+
+      if (!isPasswordValid) {
+        throw new UnauthorizedException('Invalid credentials');
+      }
+
+      // Generate token
+      const token = this.generateToken(organization, 'ORGANIZATION', organization.id);
+
+      return {
+        access_token: token,
+        user: {
+          id: organization.id,
+          email: organization.email,
+          name: organization.name,
+          userType: 'ORGANIZATION',
+          role: 'organization',
+          organizationId: organization.id,
+        },
+      };
     }
 
-    // Verify password
-    const isPasswordValid = await bcrypt.compare(password, organization.password);
+    // If not organization, try to find teacher
+    const teacher = await this.prisma.teacher.findUnique({
+      where: { email },
+      include: { organization: true },
+    });
 
-    if (!isPasswordValid) {
-      throw new UnauthorizedException('Invalid credentials');
+    if (teacher) {
+      // Verify password
+      const isPasswordValid = await bcrypt.compare(password, teacher.password);
+
+      if (!isPasswordValid) {
+        throw new UnauthorizedException('Invalid credentials');
+      }
+
+      // Generate token
+      const token = this.generateToken(teacher, 'TEACHER', teacher.organizationId);
+
+      return {
+        access_token: token,
+        user: {
+          id: teacher.id,
+          email: teacher.email,
+          name: `${teacher.firstName} ${teacher.lastName}`,
+          userType: 'TEACHER',
+          role: 'teacher',
+          organizationId: teacher.organizationId,
+        },
+      };
     }
 
-    // Generate token
-    const token = this.generateToken(organization, 'ORGANIZATION', organization.id);
-
-    return {
-      access_token: token,
-      user: {
-        id: organization.id,
-        email: organization.email,
-        name: organization.name,
-        userType: 'ORGANIZATION',
-        organizationId: organization.id,
-      },
-    };
+    // If neither found, throw error
+    throw new UnauthorizedException('Invalid credentials');
   }
 
   async loginManager(loginDto: LoginDto) {
@@ -115,6 +148,7 @@ export class AuthService {
         email: manager.email,
         name: `${manager.firstName} ${manager.lastName}`,
         userType: 'MANAGER',
+        role: 'manager',
         organizationId: manager.organizationId,
       },
     };
@@ -150,6 +184,7 @@ export class AuthService {
         email: teacher.email,
         name: `${teacher.firstName} ${teacher.lastName}`,
         userType: 'TEACHER',
+        role: 'teacher',
         organizationId: teacher.organizationId,
       },
     };

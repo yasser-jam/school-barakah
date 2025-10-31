@@ -50,14 +50,14 @@ export class OrganizationAuthController {
 
   @Post('login')
   @ApiOperation({
-    summary: 'Login organization',
+    summary: 'Login organization or teacher',
     description:
-      'Authenticates an organization with email and password. Returns a JWT token and organization details.',
+      'Authenticates an organization or teacher with email and password. Returns a JWT token and user details with role property.',
   })
   @ApiBody({ type: LoginDto })
   @ApiResponse({
     status: 200,
-    description: 'Organization successfully logged in',
+    description: 'Organization or teacher successfully logged in',
     type: AuthResponseDto,
   })
   @ApiResponse({
